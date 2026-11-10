@@ -6,7 +6,7 @@ API REST desenvolvida em Java e Spring Boot para gerenciamento de produtos e mov
 
 Este projeto faz parte de um sistema de controle de estoque desenvolvido com Java. A API permite consultar, cadastrar, atualizar e excluir produtos, além de registrar e consultar movimentações de estoque.
 
-A aplicação utiliza Spring Boot para disponibilizar endpoints REST e JDBC para comunicação com o banco de dados MySQL.
+A aplicação utiliza Spring Boot para disponibilizar endpoints REST e Spring JDBC para comunicação com o banco de dados MySQL.
 
 ## Tecnologias utilizadas
 
@@ -14,8 +14,8 @@ A aplicação utiliza Spring Boot para disponibilizar endpoints REST e JDBC para
 - Spring Boot
 - Spring JDBC
 - MySQL
-- Maven
 - JDBC
+- Maven
 - JSON
 - Git e GitHub
 
@@ -23,16 +23,16 @@ A aplicação utiliza Spring Boot para disponibilizar endpoints REST e JDBC para
 
 ### Produtos
 
-- Listar produtos cadastrados.
-- Cadastrar novos produtos.
-- Atualizar informações dos produtos.
-- Excluir produtos.
+- Listagem de produtos cadastrados.
+- Cadastro de novos produtos.
+- Atualização de informações dos produtos.
+- Exclusão de produtos pelo ID.
 
 ### Movimentações
 
-- Consultar histórico de movimentações.
-- Registrar movimentações.
-- Excluir o histórico de movimentações.
+- Consulta do histórico de movimentações.
+- Registro de movimentações de estoque.
+- Exclusão do histórico de movimentações.
 
 ## Endpoints
 
@@ -40,7 +40,7 @@ A aplicação utiliza Spring Boot para disponibilizar endpoints REST e JDBC para
 
 | Método | Rota | Descrição |
 |---|---|---|
-| GET | `/produtos` | Lista os produtos |
+| GET | `/produtos` | Lista todos os produtos |
 | POST | `/produtos` | Cadastra um produto |
 | PUT | `/produtos` | Atualiza um produto |
 | DELETE | `/produtos/{id}` | Exclui um produto pelo ID |
@@ -53,15 +53,105 @@ A aplicação utiliza Spring Boot para disponibilizar endpoints REST e JDBC para
 | POST | `/movimentacoes` | Registra uma movimentação |
 | DELETE | `/movimentacoes` | Exclui todas as movimentações |
 
-**Atenção:** a rota DELETE `/movimentacoes` exclui todo o histórico.
+**Atenção:** o endpoint `DELETE /movimentacoes` exclui todo o histórico de movimentações.
+
+## Exemplos de utilização
+
+### Produtos
+
+**Cadastrar produto — POST `/produtos`**
+
+Requisição JSON:
+
+```json
+{
+  "nome": "Teclado mecânico",
+  "preco": 120.00,
+  "quantidade": 10
+}
+```
+
+Resposta:
+
+```text
+Produto cadastrado com sucesso!
+```
+
+**Atualizar produto — PUT `/produtos`**
+
+Requisição JSON:
+
+```json
+{
+  "id": 1,
+  "nome": "Teclado mecânico RGB",
+  "preco": 150.00,
+  "quantidade": 15
+}
+```
+
+**Consultar produtos — GET `/produtos`**
+
+Exemplo de resposta:
+
+```json
+[
+  {
+    "id": 1,
+    "nome": "Teclado mecânico RGB",
+    "preco": 150.0,
+    "quantidade": 15
+  }
+]
+```
+
+### Movimentações
+
+**Registrar movimentação — POST `/movimentacoes`**
+
+Requisição JSON:
+
+```json
+{
+  "nomeProduto": "Teclado mecânico",
+  "tipo": "SAÍDA",
+  "quantidade": 2
+}
+```
+
+Resposta:
+
+```text
+Movimentação registrada com sucesso!
+```
+
+**Consultar histórico — GET `/movimentacoes`**
+
+Exemplo de resposta:
+
+```json
+[
+  {
+    "id": 1,
+    "nomeProduto": "Teclado mecânico",
+    "tipo": "SAÍDA",
+    "quantidade": 2,
+    "data": "10/11/2026 15:30:00"
+  }
+]
+```
+
+**Observação:** a data e a hora são registradas automaticamente pelo MySQL por meio da configuração `CURRENT_TIMESTAMP`. Na consulta, o DAO formata a data no padrão `dd/MM/yyyy HH:mm:ss`.
+
+Os exemplos de respostas apresentados são ilustrativos.
 
 ## Configuração e execução
 
 ### Pré-requisitos
 
-- Java 21 ou superior
-- MySQL
-- Git
+- Java 21 ou superior.
+- MySQL.
+- Git.
 
 ### 1. Clonar o repositório
 
@@ -77,27 +167,31 @@ cd api-estoque
 
 ### 3. Configurar o banco de dados
 
-Crie o banco de dados `controle_estoque` no MySQL e configure as credenciais de acesso.
+Crie o banco de dados `controle_estoque` no MySQL e prepare as tabelas necessárias para a aplicação.
 
-### 4. Configurar a variável de ambiente
+A aplicação utiliza a tabela `produtos` e a tabela `movimentacoes`.
 
-No PowerShell:
+### 4. Configurar as credenciais
+
+A aplicação utiliza a variável de ambiente `DB_PASSWORD` para acessar o banco de dados.
+
+No PowerShell, configure:
 
 ```powershell
-$env:DB_PASSWORD="SUA_NOVA_SENHA"
+$env:DB_PASSWORD="SUA_SENHA_DO_MYSQL"
 ```
 
-Configure também o usuário e a URL do banco no arquivo `application.properties`, caso necessário.
+O arquivo `application.properties` já contém a URL e o usuário da conexão. Caso utilize outras configurações de MySQL, ajuste esses dados conforme necessário.
 
 ### 5. Executar a aplicação
 
-No Windows:
+No Windows, utilize o Maven Wrapper:
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-A API será disponibilizada, por padrão, em:
+A API estará disponível em:
 
 `http://localhost:8080`
 
@@ -105,8 +199,13 @@ A API será disponibilizada, por padrão, em:
 
 Os endpoints podem ser testados utilizando ferramentas como Postman ou Insomnia.
 
+### Endpoints para teste
+
+- `http://localhost:8080/produtos`
+- `http://localhost:8080/movimentacoes`
+
 ## Autor
 
-Gabriel Farias
+**Gabriel Farias**
 
-Projeto desenvolvido como parte dos estudos em Ciência da Computação, com foco em Java, desenvolvimento de APIs REST e integração com banco de dados.
+Projeto desenvolvido como parte dos estudos em Ciência da Computação, com foco em Java, desenvolvimento de APIs REST e integração com banco de dados MySQL.
