@@ -1,0 +1,439 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Control | Gestão de Estoque</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="layout">
+
+        <!-- MENU LATERAL -->
+        <aside class="sidebar">
+
+            <div class="logo">
+                <div class="logo-icon">S</div>
+                <div>
+                    <h2>STOCK CONTROL</h2>
+                    <span>Inventory Management</span>
+                </div>
+            </div>
+
+            <div class="menu-label">MENU PRINCIPAL</div>
+
+            <nav class="menu">
+                <a href="#inicio" class="menu-item ativo">
+                    <span>▦</span> Dashboard
+                </a>
+
+                <a href="#produtos" class="menu-item">
+                    <span>□</span> Produtos
+                </a>
+
+                <a href="#historico" class="menu-item">
+                    <span>↔</span> Movimentações
+                </a>
+
+                <a href="#relatorio" class="menu-item">
+                    <span>▤</span> Relatórios
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <span class="status-online"></span>
+                Sistema operacional
+            </div>
+
+        </aside>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main class="conteudo">
+
+            <!-- CABEÇALHO -->
+            <header class="topbar" id="inicio">
+
+                <div>
+                    <h1>Dashboard</h1>
+                    <p>Bem-vindo ao seu painel de gerenciamento de estoque.</p>
+                </div>
+
+                <div class="usuario">
+                    <div class="avatar">A</div>
+                    <div>
+                        <strong>Administrador</strong>
+                        <span>Controle de estoque</span>
+                    </div>
+                </div>
+
+            </header>
+
+            <!-- RESUMO DO ESTOQUE -->
+            <section class="resumo">
+
+                <div class="card card-total">
+                    <div class="card-icon">▦</div>
+                    <h2>Total de produtos</h2>
+                    <p class="numero" id="totalProdutos">0</p>
+                    <span class="card-descricao">Produtos cadastrados</span>
+                </div>
+
+                <div class="card card-baixo">
+                    <div class="card-icon">⚠</div>
+                    <h2>Estoque baixo</h2>
+                    <p class="numero" id="estoqueBaixo">0</p>
+                    <span class="card-descricao">Precisam de reposição</span>
+                </div>
+
+                <div class="card card-esgotado">
+                    <div class="card-icon">!</div>
+                    <h2>Sem estoque</h2>
+                    <p class="numero" id="semEstoque">0</p>
+                    <span class="card-descricao">Produtos indisponíveis</span>
+                </div>
+
+                <div class="card card-valor">
+                    <div class="card-icon">R$</div>
+                    <h2>Valor em estoque</h2>
+                    <p class="numero" id="valorEstoque">R$ 0,00</p>
+                    <span class="card-descricao">Valor total armazenado</span>
+                </div>
+
+            </section>
+
+            <!-- PRODUTOS -->
+            <section class="produtos" id="produtos">
+
+                <div class="cabecalho-produtos">
+
+                    <div>
+                        <h2>Produtos cadastrados</h2>
+                        <p>Consulte e gerencie os produtos do seu estoque.</p>
+                    </div>
+
+                    <button type="button" class="botao-adicionar" id="abrirFormulario">
+                        + Novo produto
+                    </button>
+
+                </div>
+
+                <!-- PESQUISA E FILTRO -->
+                <div class="pesquisa">
+
+                    <input
+                        type="text"
+                        id="pesquisarProduto"
+                        placeholder="Pesquisar produto pelo nome..."
+                        autocomplete="off"
+                    >
+
+                    <select id="filtroStatus">
+                        <option value="todos">Todos os produtos</option>
+                        <option value="disponivel">Disponíveis</option>
+                        <option value="baixo">Estoque baixo</option>
+                        <option value="esgotado">Sem estoque</option>
+                    </select>
+
+                </div>
+
+                <!-- TABELA DE PRODUTOS -->
+                <div class="tabela-container">
+
+                    <table class="tabela-produtos">
+             <colgroup>
+                <col style="width: 18%">
+                <col style="width: 12%">
+                <col style="width: 13%">
+                <col style="width: 15%">
+                <col style="width: 42%">
+             </colgroup>
+
+            <thead>
+                <tr>
+                <th>Produto</th>
+                <th>Preço</th>
+                <th>Quantidade</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+
+    <tbody>
+    </tbody>
+</table>
+                </div>
+
+            </section>
+
+            <!-- CADASTRO DE PRODUTO -->
+            <section class="formulario" id="formularioProduto" hidden>
+
+                <div class="formulario-cabecalho">
+
+                    <div>
+                        <h2>Cadastrar produto</h2>
+                        <p>Preencha os dados para adicionar um novo item ao estoque.</p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="botao-fechar"
+                        id="fecharFormulario"
+                        aria-label="Fechar formulário"
+                    >
+                        &times;
+                    </button>
+
+                </div>
+
+                <label for="nomeProduto">Nome do produto</label>
+                <input
+                    type="text"
+                    id="nomeProduto"
+                    placeholder="Ex.: Teclado gamer"
+                >
+
+                <label for="precoProduto">Preço (R$)</label>
+                <input
+                    type="number"
+                    id="precoProduto"
+                    placeholder="Ex.: 199.90"
+                    step="0.01"
+                    min="0.01"
+                >
+
+                <label for="quantidadeProduto">Quantidade</label>
+                <input
+                    type="number"
+                    id="quantidadeProduto"
+                    placeholder="Ex.: 10"
+                    min="0"
+                    step="1"
+                >
+
+                <button
+                    type="button"
+                    class="botao-adicionar"
+                    id="salvarProduto"
+                >
+                    Salvar produto
+                </button>
+
+            </section>
+
+            <!-- EDIÇÃO DE PRODUTO -->
+            <section class="formulario" id="formularioEdicao" hidden>
+
+                <h2>Editar produto</h2>
+
+                <label for="editarNomeProduto">Nome do produto</label>
+                <input
+                    type="text"
+                    id="editarNomeProduto"
+                    placeholder="Nome do produto"
+                >
+
+                <label for="editarPrecoProduto">Preço (R$)</label>
+                <input
+                    type="number"
+                    id="editarPrecoProduto"
+                    min="0.01"
+                    step="0.01"
+                >
+
+                <label for="editarQuantidadeProduto">Quantidade</label>
+                <input
+                    type="number"
+                    id="editarQuantidadeProduto"
+                    min="0"
+                    step="1"
+                >
+
+                <div class="acoes-formulario">
+
+                    <button
+                        type="button"
+                        class="botao-adicionar"
+                        id="salvarEdicao"
+                    >
+                        Salvar alterações
+                    </button>
+
+                    <button
+                        type="button"
+                        class="botao-cancelar"
+                        id="cancelarEdicao"
+                    >
+                        Cancelar
+                    </button>
+
+                </div>
+
+            </section>
+
+            <!-- HISTÓRICO DE MOVIMENTAÇÕES -->
+            <section class="secao-historico" id="historico">
+
+                <div class="secao-cabecalho">
+
+                    <div>
+                        <h2>Histórico de movimentações</h2>
+                        <p>Acompanhe todas as entradas e saídas do estoque.</p>
+                    </div>
+
+                </div>
+
+                <div class="filtros-historico">
+
+                    <label for="filtroTipoHistorico">
+                        Filtrar movimentações:
+                    </label>
+
+                    <select id="filtroTipoHistorico">
+                        <option value="todos">Todas</option>
+                        <option value="entrada">Somente entradas</option>
+                        <option value="saida">Somente saídas</option>
+                    </select>
+
+                </div>
+
+                <div class="filtros-periodo">
+
+                    <label for="dataInicial">Data inicial</label>
+                    <input type="date" id="dataInicial">
+
+                    <label for="dataFinal">Data final</label>
+                    <input type="date" id="dataFinal">
+
+                    <button type="button" id="limparFiltroData">
+                        Limpar datas
+                    </button>
+
+                    <button type="button" id="limparHistorico">
+                        Limpar histórico
+                    </button>
+
+                </div>
+
+                <div class="tabela-container">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>Tipo</th>
+                                <th>Quantidade</th>
+                                <th>Data e horário</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="historicoMovimentacoes">
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+            <!-- RELATÓRIO -->
+            <section class="secao-relatorio" id="relatorio">
+
+               <div class="cabecalho-relatorio">
+
+                <div>
+                    <h2>Relatório de estoque</h2>
+                    <p>Visualize os valores e a situação dos seus produtos.</p>
+            </div>
+
+        <button type="button" class="botao-exportar" id="exportarCSV">
+        ↓ Exportar CSV
+    </button>
+
+</div>
+
+                <div class="resumo-relatorio">
+                    <h3>Valor total do estoque</h3>
+                    <p id="valorTotalRelatorio">R$ 0,00</p>
+                </div>
+
+                <div class="tabela-container">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Produtos</th>
+                                <th>Preço unitário</th>
+                                <th>Quantidade</th>
+                                <th>Valor total</th>
+                                <th>Situação</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="tabelaRelatorioEstoque">
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+            <!-- DASHBOARD DE MOVIMENTAÇÕES -->
+            <section class="secao-dashboard">
+
+                <div class="secao-cabecalho">
+
+                    <div>
+                        <h2>Dashboard de movimentações</h2>
+                        <p>Acompanhe o fluxo de movimentações do estoque.</p>
+                    </div>
+
+                </div>
+
+                <div class="cards-dashboard">
+
+                    <div class="card-dashboard">
+                        <h3>Total de entradas</h3>
+                        <p id="totalEntradas">0</p>
+                    </div>
+
+                    <div class="card-dashboard">
+                        <h3>Total de saídas</h3>
+                        <p id="totalSaidas">0</p>
+                    </div>
+
+                </div>
+
+                <div class="grafico-container">
+
+                    <h3>Movimentações de estoque</h3>
+                    <canvas id="graficoMovimentacoes"></canvas>
+
+                </div>
+
+            </section>
+
+            <!-- RODAPÉ -->
+            <footer class="rodape">
+                STOCK CONTROL · Sistema de gerenciamento de estoque
+            </footer>
+
+        </main>
+
+    </div>
+
+    <!-- BIBLIOTECA DO GRÁFICO -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- JAVASCRIPT DO SISTEMA -->
+    <script src="script.js"></script>
+
+</body>
+</html>

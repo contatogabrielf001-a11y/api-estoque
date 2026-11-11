@@ -6,7 +6,7 @@ API REST desenvolvida em Java e Spring Boot para gerenciamento de produtos e mov
 
 Este projeto faz parte de um sistema de controle de estoque desenvolvido com Java. A API permite consultar, cadastrar, atualizar e excluir produtos, além de registrar e consultar movimentações de estoque.
 
-A aplicação utiliza Spring Boot para disponibilizar endpoints REST e Spring JDBC para comunicação com o banco de dados MySQL.
+A aplicação utiliza Spring Boot para disponibilizar endpoints REST e JDBC para comunicação com o banco de dados MySQL.
 
 ## Tecnologias utilizadas
 
@@ -14,8 +14,8 @@ A aplicação utiliza Spring Boot para disponibilizar endpoints REST e Spring JD
 - Spring Boot
 - Spring JDBC
 - MySQL
-- JDBC
 - Maven
+- JDBC
 - JSON
 - Git e GitHub
 
@@ -23,43 +23,25 @@ A aplicação utiliza Spring Boot para disponibilizar endpoints REST e Spring JD
 
 ### Produtos
 
-- Listagem de produtos cadastrados.
-- Cadastro de novos produtos.
-- Atualização de informações dos produtos.
-- Exclusão de produtos pelo ID.
+- Listar produtos cadastrados.
+- Cadastrar novos produtos.
+- Atualizar informações dos produtos.
+- Excluir produtos.
 
 ### Movimentações
 
-- Consulta do histórico de movimentações.
-- Registro de movimentações de estoque.
-- Exclusão do histórico de movimentações.
+- Consultar histórico de movimentações.
+- Registrar movimentações.
+- Excluir o histórico de movimentações.
 
 ## Endpoints
 
-### Produtos — `/produtos`
-
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/produtos` | Lista todos os produtos |
-| POST | `/produtos` | Cadastra um produto |
-| PUT | `/produtos` | Atualiza um produto |
-| DELETE | `/produtos/{id}` | Exclui um produto pelo ID |
-
-### Movimentações — `/movimentacoes`
-
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/movimentacoes` | Lista as movimentações |
-| POST | `/movimentacoes` | Registra uma movimentação |
-| DELETE | `/movimentacoes` | Exclui todas as movimentações |
-
-**Atenção:** o endpoint `DELETE /movimentacoes` exclui todo o histórico de movimentações.
 
 ## Exemplos de utilização
 
 ### Produtos
 
-**Cadastrar produto — POST `/produtos`**
+**Cadastrar produto — POST /produtos**
 
 Requisição JSON:
 
@@ -77,12 +59,10 @@ Resposta:
 Produto cadastrado com sucesso!
 ```
 
-**Atualizar produto — PUT `/produtos`**
-
-Requisição JSON:
+**Atualizar produto — PUT /produtos**
 
 ```json
-{
+{A
   "id": 1,
   "nome": "Teclado mecânico RGB",
   "preco": 150.00,
@@ -90,7 +70,7 @@ Requisição JSON:
 }
 ```
 
-**Consultar produtos — GET `/produtos`**
+**Consultar produtos — GET /produtos**
 
 Exemplo de resposta:
 
@@ -107,7 +87,7 @@ Exemplo de resposta:
 
 ### Movimentações
 
-**Registrar movimentação — POST `/movimentacoes`**
+**Registrar movimentação — POST /movimentacoes**
 
 Requisição JSON:
 
@@ -125,7 +105,7 @@ Resposta:
 Movimentação registrada com sucesso!
 ```
 
-**Consultar histórico — GET `/movimentacoes`**
+**Consultar histórico — GET /movimentacoes**
 
 Exemplo de resposta:
 
@@ -141,17 +121,36 @@ Exemplo de resposta:
 ]
 ```
 
-**Observação:** a data e a hora são registradas automaticamente pelo MySQL por meio da configuração `CURRENT_TIMESTAMP`. Na consulta, o DAO formata a data no padrão `dd/MM/yyyy HH:mm:ss`.
+**Observação:** A data exibida no histórico é formatada pelo DAO no padrão `dd/MM/yyyy HH:mm:ss`. O cadastro não envia a data no INSERT.
 
-Os exemplos de respostas apresentados são ilustrativos.
+**Atenção:** O endpoint DELETE /movimentacoes exclui todo o histórico de movimentações.
+
+### Produtos — `/produtos`
+
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/produtos` | Lista os produtos |
+| POST | `/produtos` | Cadastra um produto |
+| PUT | `/produtos` | Atualiza um produto |
+| DELETE | `/produtos/{id}` | Exclui um produto pelo ID |
+
+### Movimentações — `/movimentacoes`
+
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/movimentacoes` | Lista as movimentações |
+| POST | `/movimentacoes` | Registra uma movimentação |
+| DELETE | `/movimentacoes` | Exclui todas as movimentações |
+
+**Atenção:** a rota DELETE `/movimentacoes` exclui todo o histórico.
 
 ## Configuração e execução
 
 ### Pré-requisitos
 
-- Java 21 ou superior.
-- MySQL.
-- Git.
+- Java 21 ou superior
+- MySQL
+- Git
 
 ### 1. Clonar o repositório
 
@@ -167,31 +166,27 @@ cd api-estoque
 
 ### 3. Configurar o banco de dados
 
-Crie o banco de dados `controle_estoque` no MySQL e prepare as tabelas necessárias para a aplicação.
+Crie o banco de dados `controle_estoque` no MySQL e configure as credenciais de acesso.
 
-A aplicação utiliza a tabela `produtos` e a tabela `movimentacoes`.
+### 4. Configurar a variável de ambiente
 
-### 4. Configurar as credenciais
-
-A aplicação utiliza a variável de ambiente `DB_PASSWORD` para acessar o banco de dados.
-
-No PowerShell, configure:
+No PowerShell:
 
 ```powershell
-$env:DB_PASSWORD="SUA_SENHA_DO_MYSQL"
+$env:DB_PASSWORD="SUA_NOVA_SENHA"
 ```
 
-O arquivo `application.properties` já contém a URL e o usuário da conexão. Caso utilize outras configurações de MySQL, ajuste esses dados conforme necessário.
+Configure também o usuário e a URL do banco no arquivo `application.properties`, caso necessário.
 
 ### 5. Executar a aplicação
 
-No Windows, utilize o Maven Wrapper:
+No Windows:
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-A API estará disponível em:
+A API será disponibilizada, por padrão, em:
 
 `http://localhost:8080`
 
@@ -199,13 +194,8 @@ A API estará disponível em:
 
 Os endpoints podem ser testados utilizando ferramentas como Postman ou Insomnia.
 
-### Endpoints para teste
-
-- `http://localhost:8080/produtos`
-- `http://localhost:8080/movimentacoes`
-
 ## Autor
 
-**Gabriel Farias**
+Gabriel Farias
 
-Projeto desenvolvido como parte dos estudos em Ciência da Computação, com foco em Java, desenvolvimento de APIs REST e integração com banco de dados MySQL.
+Projeto desenvolvido como parte dos estudos em Ciência da Computação, com foco em Java, desenvolvimento de APIs REST e integração com banco de dados.

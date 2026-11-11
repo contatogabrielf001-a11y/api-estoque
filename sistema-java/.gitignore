@@ -1,0 +1,12 @@
+# Arquivos compilados do Java
+*.class
+
+# Configurações locais do VS Code
+.vscode/
+
+# Credenciais e arquivos de ambiente
+.env
+.env.*
+
+# Arquivos temporários
+*.log
