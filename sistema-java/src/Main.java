@@ -10,7 +10,6 @@ public class Main {
     public static void main(String[] args) {
 
         Scanner scanner = new Scanner(System.in);
-        
         int opcao = 0;
         String nome = "";
         double preco = 0;
@@ -18,7 +17,6 @@ public class Main {
 
         do {
 
-          
 int semEstoque = 0;
 int estoqueBaixo = 0;
 int precisaReposicao = 0;
@@ -103,11 +101,11 @@ try {
             switch (opcao) {
 
           case 1:
-    scanner.nextLine();
+     scanner.nextLine();
 
     
-         System.out.println("Digite o nome do produto:");
-           nome = scanner.nextLine();
+     System.out.println("Digite o nome do produto:");
+     nome = scanner.nextLine();
 
     while (nome.trim().isEmpty()) {
         System.out.println("O nome nao pode ficar vazio!");
@@ -161,8 +159,7 @@ try {
     int estoqueMinimo;
     
     System.out.println("Digite o estoque minimo do produto:");
-
-    while (!scanner.hasNextInt()) {
+  while (!scanner.hasNextInt()) {
         System.out.println("Digite um numero inteiro:");
         scanner.nextLine();
     }

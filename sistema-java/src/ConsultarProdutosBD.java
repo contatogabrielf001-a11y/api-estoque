@@ -9,13 +9,11 @@ public class ConsultarProdutosBD {
 
     public static void main(String[] args) {
 
-      
         String sql = "SELECT * FROM produtos";
 
         try (
             Connection conexao =
               ConexaoMySQL.conectar();  
-
             PreparedStatement comando =
                 conexao.prepareStatement(sql);
 
