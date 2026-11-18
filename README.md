@@ -98,11 +98,14 @@ api-estoque/
 - Histórico de vendas.
 - Consulta de movimentações de estoque.
 - Registro de movimentações pela API.
+- Atualização automática do estoque após movimentações.
 - Consulta do histórico de movimentações pela API.
+- Validação de quantidade disponível antes de registrar saídas.
 
 ### Relatórios
 - Dashboard com resumo geral do estoque.
 - Cálculo do valor total em estoque.
+- Histórico de entradas e saídas.
 - Exportação de relatórios em CSV.
 
 ## Documentação da API
@@ -174,15 +177,19 @@ Exemplo de resposta:
 
 ### Registrar movimentação — POST `/movimentacoes`
 
-Requisição JSON:
+Requisição JSON para registrar uma saída:
 
 ```json
 {
-  "nomeProduto": "Teclado mecânico",
-  "tipo": "SAÍDA",
+  "idProduto": 1,
+  "tipo": "saida",
   "quantidade": 2
 }
 ```
+
+O campo `idProduto` identifica o produto cadastrado. O sistema valida a quantidade disponível, atualiza o estoque e registra a movimentação.
+
+Para registrar uma entrada, utilize `"tipo": "entrada"`.
 
 ### Consultar histórico — GET `/movimentacoes`
 
@@ -208,6 +215,36 @@ O projeto utiliza o MySQL com o banco de dados `controle_estoque`.
 
 As aplicações utilizam JDBC e Spring JDBC para realizar operações de consulta, cadastro, atualização e exclusão de dados.
 
+### Criação do banco de dados
+
+Execute no MySQL:
+
+```sql
+CREATE DATABASE controle_estoque;
+
+USE controle_estoque;
+
+CREATE TABLE produtos (
+    id INT NOT NULL AUTO_INCREMENT,
+    nome VARCHAR(100) NOT NULL,
+    preco DECIMAL(10,2) NOT NULL,
+    quantidade INT NOT NULL,
+    estoque_minimo INT NOT NULL DEFAULT 5,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE movimentacoes (
+    id INT NOT NULL AUTO_INCREMENT,
+    nome_produto VARCHAR(150) NOT NULL,
+    tipo VARCHAR(20) NOT NULL,
+    quantidade INT NOT NULL,
+    data_movimentacao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+);
+```
+
+### Configuração da conexão
+
 A conexão é configurada por meio das seguintes variáveis de ambiente:
 
 | Variável | Descrição |
@@ -216,7 +253,7 @@ A conexão é configurada por meio das seguintes variáveis de ambiente:
 | `DB_USER` | Usuário de acesso ao MySQL |
 | `DB_PASSWORD` | Senha do usuário MySQL |
 
-Exemplo de endereço de conexão:
+Endereço padrão de conexão:
 
 ```text
 jdbc:mysql://localhost:3306/controle_estoque
@@ -232,6 +269,7 @@ As credenciais de acesso não devem ser armazenadas diretamente no código ou pu
 - MySQL Server.
 - Git.
 - Visual Studio Code (recomendado).
+- Extensão Live Server do VS Code para executar o frontend.
 
 ### 1. Clonar o repositório
 
@@ -247,7 +285,7 @@ cd api-estoque
 
 ### 3. Configurar o banco de dados
 
-Crie o banco de dados `controle_estoque` no MySQL e configure as tabelas necessárias para o funcionamento do sistema.
+Crie o banco de dados `controle_estoque` e as tabelas utilizando os comandos SQL apresentados na seção Banco de dados.
 
 ### 4. Configurar as variáveis de ambiente
 
@@ -275,9 +313,18 @@ Após a inicialização, a API estará disponível em:
 
 `http://localhost:8080`
 
+Mantenha o terminal aberto enquanto utilizar a aplicação.
+
 ### 6. Executar o frontend
 
-Com a API em execução, abra a pasta `frontend` e execute o arquivo `index.html` em um navegador.
+Com a API em execução:
+
+1. Abra a pasta `frontend` no Visual Studio Code.
+2. Clique com o botão direito no arquivo `index.html`.
+3. Selecione **Open with Live Server**.
+4. Acesse o endereço:
+
+`http://127.0.0.1:5500`
 
 O frontend utiliza JavaScript para realizar requisições à API.
 
@@ -300,6 +347,8 @@ Execute o sistema:
 ```powershell
 java -cp "out;lib/*" Main
 ```
+
+O sistema Java também precisa de uma conexão MySQL configurada corretamente.
 
 ## Testes
 
