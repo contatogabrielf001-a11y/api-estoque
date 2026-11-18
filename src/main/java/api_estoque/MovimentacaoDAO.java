@@ -1,3 +1,4 @@
+
 package api_estoque;
 
 import java.sql.Connection;
@@ -19,7 +20,6 @@ public class MovimentacaoDAO {
         this.dataSource = dataSource;
     }
 
-    // Método responsável por consultar o histórico de movimentações.
     public List<Movimentacao> listarTodas() {
 
         List<Movimentacao> movimentacoes = new ArrayList<>();
@@ -48,13 +48,14 @@ public class MovimentacaoDAO {
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao consultar movimentações.", e);
+            throw new RuntimeException(
+                "Erro ao consultar movimentações.", e
+            );
         }
 
         return movimentacoes;
     }
 
-// Método responsável por registrar uma movimentação no banco de dados.
     public void registrar(Movimentacao movimentacao) {
 
         String sql = "INSERT INTO movimentacoes " +
@@ -72,11 +73,30 @@ public class MovimentacaoDAO {
             comando.executeUpdate();
 
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao registrar movimentação.", e);
+            throw new RuntimeException(
+                "Erro ao registrar movimentação.", e
+            );
         }
     }
 
-// Método responsável por excluir todo o histórico de movimentações.
+    public void registrar(Connection conexao, Movimentacao movimentacao)
+            throws java.sql.SQLException {
+
+        String sql = "INSERT INTO movimentacoes " +
+                     "(nome_produto, tipo, quantidade) VALUES (?, ?, ?)";
+
+        try (
+            PreparedStatement comando = conexao.prepareStatement(sql)
+        ) {
+
+            comando.setString(1, movimentacao.getNomeProduto());
+            comando.setString(2, movimentacao.getTipo());
+            comando.setInt(3, movimentacao.getQuantidade());
+
+            comando.executeUpdate();
+        }
+    }
+
     public void excluirTodas() {
 
         String sql = "DELETE FROM movimentacoes";
@@ -89,7 +109,9 @@ public class MovimentacaoDAO {
             comando.executeUpdate();
 
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao excluir movimentações.", e);
+            throw new RuntimeException(
+                "Erro ao excluir movimentações.", e
+            );
         }
     }
 }

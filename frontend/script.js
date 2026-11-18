@@ -1,6 +1,6 @@
-// ==========================================
-// ELEMENTOS DO HTML
-// ==========================================
+
+const API_URL = "http://localhost:8080/produtos";
+const API_MOVIMENTACOES_URL = "http://localhost:8080/movimentacoes";
 
 const botaoAbrir = document.getElementById("abrirFormulario");
 const formulario = document.getElementById("formularioProduto");
@@ -11,11 +11,10 @@ const precoProduto = document.getElementById("precoProduto");
 const quantidadeProduto = document.getElementById("quantidadeProduto");
 const botaoSalvar = document.getElementById("salvarProduto");
 
-const tabela = document.querySelector("tbody");
+const tabela = document.querySelector(".tabela-produtos tbody");
 const campoPesquisa = document.getElementById("pesquisarProduto");
 const filtroStatus = document.getElementById("filtroStatus");
 
-// Formulário de edição
 const formularioEdicao = document.getElementById("formularioEdicao");
 const editarNomeProduto = document.getElementById("editarNomeProduto");
 const editarPrecoProduto = document.getElementById("editarPrecoProduto");
@@ -23,63 +22,61 @@ const editarQuantidadeProduto = document.getElementById("editarQuantidadeProduto
 const botaoSalvarEdicao = document.getElementById("salvarEdicao");
 const botaoCancelarEdicao = document.getElementById("cancelarEdicao");
 
-// Histórico
 const filtroTipoHistorico = document.getElementById("filtroTipoHistorico");
 const dataInicial = document.getElementById("dataInicial");
 const dataFinal = document.getElementById("dataFinal");
 const botaoLimparFiltroData = document.getElementById("limparFiltroData");
 const botaoLimparHistorico = document.getElementById("limparHistorico");
+const botaoExportarCSV = document.getElementById("exportarCSV");
 
-
-
+let produtos = [];
+let historico = [];
 let indiceEmEdicao = null;
 let graficoMovimentacoes = null;
 
-
 // ==========================================
-// ARMAZENAMENTO DOS PRODUTOS
+// FUNÇÕES AUXILIARES
 // ==========================================
 
-function carregarProdutos() {
+function formatarMoeda(valor) {
+    return valor.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+    });
+}
+
+function normalizarTipo(tipo) {
+    return String(tipo || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+}
+
+async function obterMensagemErro(resposta, mensagemPadrao) {
+    const texto = await resposta.text();
+
+    if (!texto) {
+        return mensagemPadrao;
+    }
+
     try {
-        const dadosSalvos = JSON.parse(localStorage.getItem("produtos"));
-
-        if (!Array.isArray(dadosSalvos)) {
-            return [];
-        }
-
-        return dadosSalvos.filter(function (produto) {
-            return (
-                produto &&
-                typeof produto.nome === "string" &&
-                typeof produto.preco === "number" &&
-                Number.isFinite(produto.preco) &&
-                typeof produto.quantidade === "number" &&
-                Number.isInteger(produto.quantidade) &&
-                produto.quantidade >= 0
-            );
-        });
-
-    } catch (erro) {
-        console.error("Erro ao carregar produtos:", erro);
-        return [];
+        const dados = JSON.parse(texto);
+        return dados.erro || mensagemPadrao;
+    } catch {
+        return texto;
     }
 }
 
-//Endereço de API de produtos.
-const API_URL = "http://localhost:8080/produtos";
-const API_MOVIMENTACOES_URL = "http://localhost:8080/movimentacoes";
+// ==========================================
+// CARREGAR PRODUTOS DA API
+// ==========================================
 
-//lista de produtos carregador pela API.
-let produtos = [];
-
-//Busca os produtos cadastrados no banco de dados.
-async function carregarProdutosAPI(){
+async function carregarProdutosAPI() {
     try {
         const resposta = await fetch(API_URL);
-        if(!resposta.ok) {
-            throw new Error("Erro ao buscar produtos:" + resposta.status);
 
+        if (!resposta.ok) {
+            throw new Error("Erro ao consultar produtos: " + resposta.status);
         }
 
         produtos = await resposta.json();
@@ -88,26 +85,22 @@ async function carregarProdutosAPI(){
         atualizarResumo();
         atualizarRelatorioEstoque();
 
-    }  catch(erro) {
-        console.error("Erro ao conectar com a API: ", erro);
+        return true;
 
-        alert("Não foi possivel carregar os produtos da API.");
+    } catch (erro) {
+        console.error("Erro ao carregar produtos:", erro);
+        alert("Não foi possível carregar os produtos da API.");
 
+        return false;
     }
 }
 
-
 // ==========================================
-// ARMAZENAMENTO DO HISTÓRICO
+// CARREGAR HISTÓRICO DA API
 // ==========================================
-
-// Carrega o histórico de movimentações diretamente da API.
-let historico = [];
 
 async function carregarHistoricoAPI() {
-
     try {
-
         const resposta = await fetch(API_MOVIMENTACOES_URL);
 
         if (!resposta.ok) {
@@ -119,16 +112,18 @@ async function carregarHistoricoAPI() {
         mostrarHistorico();
         atualizarDashboard();
 
-    } catch (erro) {
+        return true;
 
+    } catch (erro) {
         console.error("Erro ao carregar histórico:", erro);
         alert("Não foi possível carregar o histórico de movimentações.");
 
+        return false;
     }
 }
 
 // ==========================================
-// CALCULAR STATUS DO PRODUTO
+// STATUS DOS PRODUTOS
 // ==========================================
 
 function obterStatus(produto) {
@@ -155,9 +150,36 @@ function obterStatus(produto) {
     };
 }
 
-//==========================================
-//RELATORIO DE ESTOQUE
-//==========================================
+// ==========================================
+// RESUMO DO ESTOQUE
+// ==========================================
+
+function atualizarResumo() {
+    const totalProdutos = document.getElementById("totalProdutos");
+    const estoqueBaixo = document.getElementById("estoqueBaixo");
+    const semEstoque = document.getElementById("semEstoque");
+    const valorEstoque = document.getElementById("valorEstoque");
+
+    if (!totalProdutos || !estoqueBaixo || !semEstoque || !valorEstoque) {
+        return;
+    }
+
+    totalProdutos.textContent = produtos.length;
+
+    estoqueBaixo.textContent = produtos.filter(function (produto) {
+        return produto.quantidade > 0 && produto.quantidade < 5;
+    }).length;
+
+    semEstoque.textContent = produtos.filter(function (produto) {
+        return produto.quantidade === 0;
+    }).length;
+
+    const valorTotal = produtos.reduce(function (total, produto) {
+        return total + produto.preco * produto.quantidade;
+    }, 0);
+
+    valorEstoque.textContent = formatarMoeda(valorTotal);
+}
 
 // ==========================================
 // RELATÓRIO DE ESTOQUE
@@ -177,6 +199,7 @@ function atualizarRelatorioEstoque() {
 
     produtos.forEach(function (produto) {
         const valorProduto = produto.preco * produto.quantidade;
+        const status = obterStatus(produto);
 
         valorTotalEstoque += valorProduto;
 
@@ -186,23 +209,15 @@ function atualizarRelatorioEstoque() {
         colunaNome.textContent = produto.nome;
 
         const colunaPreco = document.createElement("td");
-        colunaPreco.textContent = produto.preco.toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL"
-        });
+        colunaPreco.textContent = formatarMoeda(produto.preco);
 
         const colunaQuantidade = document.createElement("td");
         colunaQuantidade.textContent = produto.quantidade;
 
         const colunaValorTotal = document.createElement("td");
-        colunaValorTotal.textContent = valorProduto.toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL"
-        });
+        colunaValorTotal.textContent = formatarMoeda(valorProduto);
 
         const colunaSituacao = document.createElement("td");
-        const status = obterStatus(produto);
-
         colunaSituacao.textContent = status.texto;
         colunaSituacao.classList.add(status.classe);
 
@@ -215,15 +230,11 @@ function atualizarRelatorioEstoque() {
         tabelaRelatorio.appendChild(linha);
     });
 
-    valorTotalRelatorio.textContent = valorTotalEstoque.toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL"
-    });
+    valorTotalRelatorio.textContent = formatarMoeda(valorTotalEstoque);
 }
 
-
 // ==========================================
-// MOSTRAR PRODUTOS NA TABELA
+// MOSTRAR PRODUTOS
 // ==========================================
 
 function mostrarProdutos() {
@@ -273,10 +284,7 @@ function mostrarProdutos() {
         colunaNome.textContent = produto.nome;
 
         const colunaPreco = document.createElement("td");
-        colunaPreco.textContent = produto.preco.toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL"
-        });
+        colunaPreco.textContent = formatarMoeda(produto.preco);
 
         const colunaQuantidade = document.createElement("td");
         colunaQuantidade.textContent = produto.quantidade;
@@ -291,7 +299,6 @@ function mostrarProdutos() {
 
         const colunaAcoes = document.createElement("td");
 
-        // Botão de entrada
         const botaoEntrada = document.createElement("button");
         botaoEntrada.textContent = "Entrada";
         botaoEntrada.classList.add("botao-entrada");
@@ -300,7 +307,6 @@ function mostrarProdutos() {
             registrarMovimentacao(indice, "entrada");
         });
 
-        // Botão de saída
         const botaoSaida = document.createElement("button");
         botaoSaida.textContent = "Saída";
         botaoSaida.classList.add("botao-saida");
@@ -309,7 +315,6 @@ function mostrarProdutos() {
             registrarMovimentacao(indice, "saida");
         });
 
-        // Botão de edição
         const botaoEditar = document.createElement("button");
         botaoEditar.textContent = "Editar";
         botaoEditar.classList.add("botao-editar");
@@ -318,7 +323,6 @@ function mostrarProdutos() {
             abrirEdicao(indice);
         });
 
-        // Botão de exclusão
         const botaoExcluir = document.createElement("button");
         botaoExcluir.textContent = "Excluir";
         botaoExcluir.classList.add("botao-excluir");
@@ -354,9 +358,269 @@ function mostrarProdutos() {
     }
 }
 
-//CONVERSÃO DE DATA DO HISTORICO PARA FILTRO POR PERIODO
+// ==========================================
+// EDIÇÃO DE PRODUTOS
+// ==========================================
+
+function abrirEdicao(indice) {
+    const produto = produtos[indice];
+
+    if (!produto || !formularioEdicao) {
+        return;
+    }
+
+    indiceEmEdicao = indice;
+
+    editarNomeProduto.value = produto.nome;
+    editarPrecoProduto.value = produto.preco;
+    editarQuantidadeProduto.value = produto.quantidade;
+
+    if (formulario) {
+        formulario.hidden = true;
+    }
+
+    formularioEdicao.hidden = false;
+
+    formularioEdicao.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+}
+
+function fecharEdicao() {
+    if (formularioEdicao) {
+        formularioEdicao.hidden = true;
+    }
+
+    indiceEmEdicao = null;
+}
+
+if (botaoSalvarEdicao) {
+    botaoSalvarEdicao.addEventListener("click", async function () {
+        if (indiceEmEdicao === null) {
+            return;
+        }
+
+        const produtoAtual = produtos[indiceEmEdicao];
+
+        if (!produtoAtual) {
+            fecharEdicao();
+            return;
+        }
+
+        const nome = editarNomeProduto.value.trim();
+        const precoTexto = editarPrecoProduto.value;
+        const preco = Number(precoTexto);
+        const quantidadeTexto = editarQuantidadeProduto.value;
+        const quantidade = Number(quantidadeTexto);
+
+        if (
+            nome === "" ||
+            precoTexto === "" ||
+            !Number.isFinite(preco) ||
+            preco <= 0 ||
+            quantidadeTexto === "" ||
+            !Number.isInteger(quantidade) ||
+            quantidade < 0
+        ) {
+            alert("Preencha os campos corretamente!");
+            return;
+        }
+
+        const produtoAtualizado = {
+            id: produtoAtual.id,
+            nome: nome,
+            preco: preco,
+            quantidade: quantidade
+        };
+
+        try {
+            const resposta = await fetch(API_URL, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(produtoAtualizado)
+            });
+
+            if (!resposta.ok) {
+                throw new Error(
+                    await obterMensagemErro(
+                        resposta,
+                        "Não foi possível atualizar o produto."
+                    )
+                );
+            }
+
+            fecharEdicao();
+
+            const carregou = await carregarProdutosAPI();
+
+            if (carregou) {
+                alert("Produto atualizado com sucesso!");
+            }
+
+        } catch (erro) {
+            console.error("Erro ao atualizar produto:", erro);
+            alert(erro.message || "Não foi possível atualizar o produto.");
+        }
+    });
+}
+
+if (botaoCancelarEdicao) {
+    botaoCancelarEdicao.addEventListener("click", fecharEdicao);
+}
+
+// ==========================================
+// EXCLUIR PRODUTOS
+// ==========================================
+
+async function excluirProduto(indice) {
+    const produto = produtos[indice];
+
+    if (!produto) {
+        return;
+    }
+
+    const confirmar = confirm(
+        `Deseja excluir o produto "${produto.nome}"?`
+    );
+
+    if (!confirmar) {
+        return;
+    }
+
+    try {
+        const resposta = await fetch(`${API_URL}/${produto.id}`, {
+            method: "DELETE"
+        });
+
+        if (!resposta.ok) {
+            throw new Error(
+                await obterMensagemErro(
+                    resposta,
+                    "Não foi possível excluir o produto."
+                )
+            );
+        }
+
+        const carregou = await carregarProdutosAPI();
+
+        if (carregou) {
+            alert("Produto excluído com sucesso!");
+        }
+
+    } catch (erro) {
+        console.error("Erro ao excluir produto:", erro);
+        alert(erro.message || "Não foi possível excluir o produto.");
+    }
+}
+
+// ==========================================
+// PESQUISA E FILTROS DE PRODUTOS
+// ==========================================
+
+if (campoPesquisa) {
+    campoPesquisa.addEventListener("input", mostrarProdutos);
+}
+
+if (filtroStatus) {
+    filtroStatus.addEventListener("change", mostrarProdutos);
+}
+
+// ==========================================
+// ABRIR E FECHAR CADASTRO
+// ==========================================
+
+if (botaoAbrir && formulario) {
+    botaoAbrir.addEventListener("click", function () {
+        fecharEdicao();
+        formulario.hidden = false;
+    });
+}
+
+if (botaoFecharFormulario && formulario) {
+    botaoFecharFormulario.addEventListener("click", function () {
+        formulario.hidden = true;
+    });
+}
+
+// ==========================================
+// CADASTRAR PRODUTOS
+// ==========================================
+
+if (botaoSalvar) {
+    botaoSalvar.addEventListener("click", async function () {
+        const nome = nomeProduto.value.trim();
+        const precoTexto = precoProduto.value;
+        const preco = Number(precoTexto);
+        const quantidadeTexto = quantidadeProduto.value;
+        const quantidade = Number(quantidadeTexto);
+
+        if (
+            nome === "" ||
+            precoTexto === "" ||
+            !Number.isFinite(preco) ||
+            preco <= 0 ||
+            quantidadeTexto === "" ||
+            !Number.isInteger(quantidade) ||
+            quantidade < 0
+        ) {
+            alert("Preencha os campos corretamente!");
+            return;
+        }
+
+        const novoProduto = {
+            nome: nome,
+            preco: preco,
+            quantidade: quantidade
+        };
+
+        try {
+            const resposta = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(novoProduto)
+            });
+
+            if (!resposta.ok) {
+                throw new Error(
+                    await obterMensagemErro(
+                        resposta,
+                        "Não foi possível cadastrar o produto."
+                    )
+                );
+            }
+
+            nomeProduto.value = "";
+            precoProduto.value = "";
+            quantidadeProduto.value = "";
+
+            formulario.hidden = true;
+
+            const carregou = await carregarProdutosAPI();
+
+            if (carregou) {
+                alert("Produto cadastrado com sucesso!");
+            }
+
+        } catch (erro) {
+            console.error("Erro ao cadastrar produto:", erro);
+            alert(erro.message || "Não foi possível cadastrar o produto.");
+        }
+    });
+}
+
+// ==========================================
+// CONVERTER DATA DO HISTÓRICO
+// ==========================================
 
 function converterDataHistorico(dataTexto) {
+    if (!dataTexto) {
+        return null;
+    }
 
     const partes = dataTexto.includes(",")
         ? dataTexto.split(",")
@@ -375,8 +639,22 @@ function converterDataHistorico(dataTexto) {
 
     const [hora, minuto, segundo] = horario.split(":").map(Number);
 
-    return new Date(ano, mes - 1, dia, hora, minuto, segundo);
+    const resultado = new Date(
+        ano,
+        mes - 1,
+        dia,
+        hora || 0,
+        minuto || 0,
+        segundo || 0
+    );
+
+    if (Number.isNaN(resultado.getTime())) {
+        return null;
+    }
+
+    return resultado;
 }
+
 // ==========================================
 // MOSTRAR E FILTRAR HISTÓRICO
 // ==========================================
@@ -395,32 +673,40 @@ function mostrarHistorico() {
         : "todos";
 
     const historicoFiltrado = historico.filter(function (movimentacao) {
-    const correspondeTipo =
-        tipoSelecionado === "todos" ||
-        movimentacao.tipo === tipoSelecionado;
+        const tipo = normalizarTipo(movimentacao.tipo);
 
-    const dataMovimentacao = converterDataHistorico(movimentacao.data);
+        const correspondeTipo =
+            tipoSelecionado === "todos" ||
+            tipo === tipoSelecionado;
 
-    let dataMovimentacaoISO = "";
+        const dataMovimentacao = converterDataHistorico(movimentacao.data);
 
-    if (dataMovimentacao) {
-        const ano = dataMovimentacao.getFullYear();
-        const mes = String(dataMovimentacao.getMonth() + 1).padStart(2, "0");
-        const dia = String(dataMovimentacao.getDate()).padStart(2, "0");
+        let dataMovimentacaoISO = "";
 
-        dataMovimentacaoISO = `${ano}-${mes}-${dia}`;
-    }
+        if (dataMovimentacao) {
+            const ano = dataMovimentacao.getFullYear();
+            const mes = String(dataMovimentacao.getMonth() + 1).padStart(2, "0");
+            const dia = String(dataMovimentacao.getDate()).padStart(2, "0");
 
-    const correspondeDataInicial =
-        !dataInicial || !dataInicial.value ||
-        dataMovimentacaoISO >= dataInicial.value;
+            dataMovimentacaoISO = `${ano}-${mes}-${dia}`;
+        }
 
-    const correspondeDataFinal =
-        !dataFinal || !dataFinal.value ||
-        dataMovimentacaoISO <= dataFinal.value;
+        const correspondeDataInicial =
+            !dataInicial ||
+            !dataInicial.value ||
+            dataMovimentacaoISO >= dataInicial.value;
 
-    return correspondeTipo && correspondeDataInicial && correspondeDataFinal;
-});
+        const correspondeDataFinal =
+            !dataFinal ||
+            !dataFinal.value ||
+            dataMovimentacaoISO <= dataFinal.value;
+
+        return (
+            correspondeTipo &&
+            correspondeDataInicial &&
+            correspondeDataFinal
+        );
+    });
 
     historicoFiltrado.slice().reverse().forEach(function (movimentacao) {
         const linha = document.createElement("tr");
@@ -429,11 +715,12 @@ function mostrarHistorico() {
         colunaProduto.textContent = movimentacao.nomeProduto;
 
         const colunaTipo = document.createElement("td");
-        colunaTipo.textContent =
-            movimentacao.tipo === "entrada" ? "Entrada" : "Saída";
+        const tipo = normalizarTipo(movimentacao.tipo);
+
+        colunaTipo.textContent = tipo === "entrada" ? "Entrada" : "Saída";
 
         colunaTipo.classList.add(
-            movimentacao.tipo === "entrada"
+            tipo === "entrada"
                 ? "historico-entrada"
                 : "historico-saida"
         );
@@ -466,23 +753,15 @@ function mostrarHistorico() {
 }
 
 if (filtroTipoHistorico) {
-    filtroTipoHistorico.addEventListener("change", function () {
-        mostrarHistorico();
-    });
+    filtroTipoHistorico.addEventListener("change", mostrarHistorico);
 }
 
-// EVENTOS DO FILTRO POR PERÍODO
-
 if (dataInicial) {
-    dataInicial.addEventListener("change", function () {
-        mostrarHistorico();
-    });
+    dataInicial.addEventListener("change", mostrarHistorico);
 }
 
 if (dataFinal) {
-    dataFinal.addEventListener("change", function () {
-        mostrarHistorico();
-    });
+    dataFinal.addEventListener("change", mostrarHistorico);
 }
 
 if (botaoLimparFiltroData) {
@@ -498,14 +777,12 @@ if (botaoLimparFiltroData) {
         mostrarHistorico();
     });
 }
+
 // ==========================================
-// MOVIMENTAÇÃO DE ESTOQUE
+// REGISTRAR ENTRADAS E SAÍDAS
 // ==========================================
 
-// Registra entradas e saídas de estoque através da API.
-// Registra entradas e saídas de estoque através da API.
 async function registrarMovimentacao(indice, tipo) {
-
     const produto = produtos[indice];
 
     if (!produto) {
@@ -535,357 +812,66 @@ async function registrarMovimentacao(indice, tipo) {
         return;
     }
 
-    let novaQuantidade = produto.quantidade;
-
-    if (tipo === "entrada") {
-        novaQuantidade += quantidade;
-    } else {
-
-        if (quantidade > produto.quantidade) {
-            alert("Estoque insuficiente para essa saída!");
-            return;
-        }
-
-        novaQuantidade -= quantidade;
+    if (tipo !== "entrada" && tipo !== "saida") {
+        alert("Tipo de movimentação inválido!");
+        return;
     }
 
-    const produtoAtualizado = {
-        id: produto.id,
-        nome: produto.nome,
-        preco: produto.preco,
-        quantidade: novaQuantidade
-    };
+    if (tipo === "saida" && quantidade > produto.quantidade) {
+        alert("Estoque insuficiente para essa saída!");
+        return;
+    }
 
     try {
-
-        // Atualiza o estoque do produto no banco de dados.
-        const resposta = await fetch(API_URL, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(produtoAtualizado)
-        });
-
-        if (!resposta.ok) {
-            throw new Error("Erro ao atualizar estoque: " + resposta.status);
-        }
-
-        // Registra a movimentação no banco de dados.
-        const respostaMovimentacao = await fetch(API_MOVIMENTACOES_URL, {
+        const resposta = await fetch(API_MOVIMENTACOES_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                nomeProduto: produto.nome,
+                idProduto: produto.id,
                 tipo: tipo,
                 quantidade: quantidade
             })
         });
 
-        if (!respostaMovimentacao.ok) {
-            await carregarProdutosAPI();
-            throw new Error("O estoque foi atualizado, mas o histórico não foi registrado.");
+        if (!resposta.ok) {
+            throw new Error(
+                await obterMensagemErro(
+                    resposta,
+                    "Erro ao registrar movimentação."
+                )
+            );
         }
 
         await carregarProdutosAPI();
         await carregarHistoricoAPI();
 
+        const produtoAtualizado = produtos.find(function (item) {
+            return item.id === produto.id;
+        });
+
+        const estoqueAtualizado = produtoAtualizado
+            ? produtoAtualizado.quantidade
+            : null;
+
         alert(
             `Movimentação de ${operacao} realizada com sucesso!\n` +
-            `Estoque atual: ${novaQuantidade}`
+            (
+                estoqueAtualizado !== null
+                    ? `Estoque atual: ${estoqueAtualizado}`
+                    : "Atualize a página para consultar o estoque."
+            )
         );
 
     } catch (erro) {
-
         console.error("Erro na movimentação:", erro);
-        alert(erro.message || "Não foi possível registrar a movimentação.");
 
+        alert(
+            erro.message || "Não foi possível registrar a movimentação."
+        );
     }
 }
-
-// ==========================================
-// SALVAR EDIÇÃO DO PRODUTO
-// ==========================================
-
-if (botaoSalvarEdicao) {
-   // Atualiza um produto no banco de dados através da API.
-if (botaoSalvarEdicao) {
-    botaoSalvarEdicao.addEventListener("click", async function () {
-
-        if (indiceEmEdicao === null) {
-            return;
-        }
-
-        const produtoAtual = produtos[indiceEmEdicao];
-
-        const nome = editarNomeProduto.value.trim();
-        const precoTexto = editarPrecoProduto.value;
-        const preco = Number(precoTexto);
-        const quantidadeTexto = editarQuantidadeProduto.value;
-        const quantidade = Number(quantidadeTexto);
-
-        if (
-            nome === "" ||
-            precoTexto === "" ||
-            !Number.isFinite(preco) ||
-            preco <= 0 ||
-            quantidadeTexto === "" ||
-            !Number.isInteger(quantidade) ||
-            quantidade < 0
-        ) {
-            alert("Preencha os campos corretamente!");
-            return;
-        }
-
-        const produtoAtualizado = {
-            id: produtoAtual.id,
-            nome: nome,
-            preco: preco,
-            quantidade: quantidade
-        };
-
-        try {
-
-            const resposta = await fetch(API_URL, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(produtoAtualizado)
-            });
-
-            if (!resposta.ok) {
-                throw new Error("Erro ao atualizar produto: " + resposta.status);
-            }
-
-            await carregarProdutosAPI();
-
-            fecharEdicao();
-
-            alert("Produto atualizado com sucesso!");
-
-        } catch (erro) {
-
-            console.error("Erro ao atualizar produto:", erro);
-            alert("Não foi possível atualizar o produto.");
-
-        }
-    });
-}
-}
-
-
-// ==========================================
-// CANCELAR EDIÇÃO
-// ==========================================
-
-function fecharEdicao() {
-    if (formularioEdicao) {
-        formularioEdicao.hidden = true;
-    }
-
-    indiceEmEdicao = null;
-}
-
-if (botaoCancelarEdicao) {
-    botaoCancelarEdicao.addEventListener("click", function () {
-        fecharEdicao();
-    });
-}
-
-// Exclui um produto do banco de dados através da API.
-async function excluirProduto(indice) {
-
-    const produto = produtos[indice];
-
-    if (!produto) {
-        return;
-    }
-
-    const confirmar = confirm(
-        `Deseja excluir o produto "${produto.nome}"?`
-    );
-
-    if (!confirmar) {
-        return;
-    }
-
-    try {
-
-        const resposta = await fetch(`${API_URL}/${produto.id}`, {
-            method: "DELETE"
-        });
-
-        if (!resposta.ok) {
-            throw new Error("Erro ao excluir produto: " + resposta.status);
-        }
-
-        await carregarProdutosAPI();
-
-        fecharEdicao();
-
-        alert("Produto excluído com sucesso!");
-
-    } catch (erro) {
-
-        console.error("Erro ao excluir produto:", erro);
-        alert("Não foi possível excluir o produto.");
-
-    }
-}
-
-
-// ==========================================
-// PESQUISAR PRODUTOS
-// ==========================================
-
-if (campoPesquisa) {
-    campoPesquisa.addEventListener("input", function () {
-        mostrarProdutos();
-    });
-}
-
-
-// ==========================================
-// FILTRAR PRODUTOS
-// ==========================================
-
-if (filtroStatus) {
-    filtroStatus.addEventListener("change", function () {
-        mostrarProdutos();
-    });
-}
-
-
-// ==========================================
-// ABRIR E FECHAR CADASTRO
-// ==========================================
-
-if (botaoAbrir && formulario) {
-    botaoAbrir.addEventListener("click", function () {
-        formulario.hidden = false;
-    });
-}
-
-if (botaoFecharFormulario && formulario) {
-    botaoFecharFormulario.addEventListener("click", function () {
-        formulario.hidden = true;
-    });
-}
-
-
-// ==========================================
-// CADASTRAR PRODUTO
-// ==========================================
-
-// Cadastra um produto no banco de dados através da API.
-if (botaoSalvar) {
-    botaoSalvar.addEventListener("click", async function () {
-
-        const nome = nomeProduto.value.trim();
-
-        const precoTexto = precoProduto.value;
-        const preco = Number(precoTexto);
-
-        const quantidadeTexto = quantidadeProduto.value;
-        const quantidade = Number(quantidadeTexto);
-
-        if (
-            nome === "" ||
-            precoTexto === "" ||
-            !Number.isFinite(preco) ||
-            preco <= 0 ||
-            quantidadeTexto === "" ||
-            !Number.isInteger(quantidade) ||
-            quantidade < 0
-        ) {
-            alert("Preencha os campos corretamente!");
-            return;
-        }
-
-        const novoProduto = {
-            nome: nome,
-            preco: preco,
-            quantidade: quantidade
-        };
-
-        console.log("Dados enviados para a API:", JSON.stringify(novoProduto))
-
-        try {
-
-            const resposta = await fetch(API_URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(novoProduto)
-            });
-
-            if (!resposta.ok) {
-                throw new Error("Erro ao cadastrar produto: " + resposta.status);
-            }
-
-            await carregarProdutosAPI();
-
-            nomeProduto.value = "";
-            precoProduto.value = "";
-            quantidadeProduto.value = "";
-
-            formulario.hidden = true;
-
-            alert("Produto cadastrado com sucesso!");
-
-        } catch (erro) {
-
-            console.error("Erro ao cadastrar produto:", erro);
-            alert("Não foi possível cadastrar o produto.");
-
-        }
-    });
-}
-
-
-// ==========================================
-// ATUALIZAR INDICADORES DO PAINEL
-// ==========================================
-
-function atualizarResumo() {
-    const totalProdutos = document.getElementById("totalProdutos");
-    const estoqueBaixo = document.getElementById("estoqueBaixo");
-    const semEstoque = document.getElementById("semEstoque");
-    const valorEstoque = document.getElementById("valorEstoque");
-
-    if (
-        !totalProdutos ||
-        !estoqueBaixo ||
-        !semEstoque ||
-        !valorEstoque
-    ) {
-        return;
-    }
-
-    totalProdutos.textContent = produtos.length;
-
-    estoqueBaixo.textContent = produtos.filter(function (produto) {
-        return produto.quantidade > 0 && produto.quantidade < 5;
-    }).length;
-
-    semEstoque.textContent = produtos.filter(function (produto) {
-        return produto.quantidade === 0;
-    }).length;
-
-    const valorTotal = produtos.reduce(function (total, produto) {
-        return total + produto.preco * produto.quantidade;
-    }, 0);
-
-    valorEstoque.textContent = valorTotal.toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL"
-    });
-}
-
 
 // ==========================================
 // LIMPAR HISTÓRICO
@@ -893,7 +879,6 @@ function atualizarResumo() {
 
 if (botaoLimparHistorico) {
     botaoLimparHistorico.addEventListener("click", async function () {
-
         if (historico.length === 0) {
             alert("Não existem movimentações para limpar!");
             return;
@@ -908,30 +893,38 @@ if (botaoLimparHistorico) {
         }
 
         try {
-
             const resposta = await fetch(API_MOVIMENTACOES_URL, {
                 method: "DELETE"
             });
 
             if (!resposta.ok) {
-                throw new Error("Erro ao excluir histórico: " + resposta.status);
+                throw new Error(
+                    await obterMensagemErro(
+                        resposta,
+                        "Erro ao excluir histórico."
+                    )
+                );
             }
 
-            await carregarHistoricoAPI();
+            const carregou = await carregarHistoricoAPI();
 
-            alert("Histórico apagado com sucesso!");
+            if (carregou) {
+                alert("Histórico apagado com sucesso!");
+            }
 
         } catch (erro) {
-
             console.error("Erro ao limpar histórico:", erro);
-            alert("Não foi possível apagar o histórico no banco de dados.");
 
+            alert(
+                erro.message ||
+                "Não foi possível apagar o histórico no banco de dados."
+            );
         }
     });
 }
 
 // ==========================================
-// ATUALIZAR DASHBOARD
+// DASHBOARD DE MOVIMENTAÇÕES
 // ==========================================
 
 function atualizarDashboard() {
@@ -940,7 +933,7 @@ function atualizarDashboard() {
 
     const totalEntradas = historico
         .filter(function (movimentacao) {
-            return movimentacao.tipo === "entrada";
+            return normalizarTipo(movimentacao.tipo) === "entrada";
         })
         .reduce(function (total, movimentacao) {
             return total + movimentacao.quantidade;
@@ -948,7 +941,7 @@ function atualizarDashboard() {
 
     const totalSaidas = historico
         .filter(function (movimentacao) {
-            return movimentacao.tipo === "saida";
+            return normalizarTipo(movimentacao.tipo) === "saida";
         })
         .reduce(function (total, movimentacao) {
             return total + movimentacao.quantidade;
@@ -965,9 +958,8 @@ function atualizarDashboard() {
     atualizarGrafico();
 }
 
-
 // ==========================================
-// ATUALIZAR GRÁFICO DE MOVIMENTAÇÕES
+// GRÁFICO DE MOVIMENTAÇÕES
 // ==========================================
 
 function atualizarGrafico() {
@@ -978,15 +970,13 @@ function atualizarGrafico() {
     }
 
     if (typeof Chart === "undefined") {
-        console.error(
-            "Chart.js não foi carregado. Confira as tags script no HTML."
-        );
+        console.error("Chart.js não foi carregado.");
         return;
     }
 
     const totalEntradas = historico
         .filter(function (movimentacao) {
-            return movimentacao.tipo === "entrada";
+            return normalizarTipo(movimentacao.tipo) === "entrada";
         })
         .reduce(function (total, movimentacao) {
             return total + movimentacao.quantidade;
@@ -994,7 +984,7 @@ function atualizarGrafico() {
 
     const totalSaidas = historico
         .filter(function (movimentacao) {
-            return movimentacao.tipo === "saida";
+            return normalizarTipo(movimentacao.tipo) === "saida";
         })
         .reduce(function (total, movimentacao) {
             return total + movimentacao.quantidade;
@@ -1010,136 +1000,157 @@ function atualizarGrafico() {
         return;
     }
 
-    if (graficoMovimentacoes) {
-    graficoMovimentacoes.destroy();
-}
+    graficoMovimentacoes = new Chart(elementoGrafico, {
+        type: "bar",
 
-graficoMovimentacoes = new Chart(elementoGrafico, {
-    type: "bar",
+        data: {
+            labels: ["Entradas", "Saídas"],
 
-    data: {
-        labels: ["Entradas", "Saídas"],
-
-        datasets: [{
-            label: "Quantidade de unidades",
-            data: [totalEntradas, totalSaidas],
-            backgroundColor: ["#16a36a", "#e5a642"],
-            hoverBackgroundColor: ["#35d995", "#f0b44d"],
-            borderRadius: 8,
-            borderSkipped: false,
-            maxBarThickness: 80,
-            hoverBorderWidth: 2
-        }]
-    },
-
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-
-        animation: {
-            duration: 700,
-            easing: "easeOutQuart"
+            datasets: [{
+                label: "Quantidade de unidades",
+                data: [totalEntradas, totalSaidas],
+                backgroundColor: ["#16a36a", "#e5a642"],
+                hoverBackgroundColor: ["#35d995", "#f0b44d"],
+                borderRadius: 8,
+                borderSkipped: false,
+                maxBarThickness: 80,
+                hoverBorderWidth: 2
+            }]
         },
 
-        plugins: {
-            tooltip: {
-                backgroundColor: "#141414",
-                titleColor: "#35d995",
-                bodyColor: "#f5f5f5",
-                borderColor: "#16a36a",
-                borderWidth: 1,
-                padding: 12,
-                displayColors: true
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+
+            animation: {
+                duration: 700,
+                easing: "easeOutQuart"
             },
 
-            legend: {
-                labels: {
-                    color: "#f5f5f5",
-                    font: {
-                        size: 12,
-                        weight: "600"
-                    }
-                }
-            }
-        },
-
-        scales: {
-            x: {
-                ticks: {
-                    color: "#a1a1aa",
-                    font: {
-                        size: 12,
-                        weight: "600"
-                    }
+            plugins: {
+                tooltip: {
+                    backgroundColor: "#141414",
+                    titleColor: "#35d995",
+                    bodyColor: "#f5f5f5",
+                    borderColor: "#16a36a",
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: true
                 },
 
-                grid: {
-                    display: false
+                legend: {
+                    labels: {
+                        color: "#f5f5f5",
+                        font: {
+                            size: 12,
+                            weight: "600"
+                        }
+                    }
                 }
             },
 
-            y: {
-                beginAtZero: true,
+            scales: {
+                x: {
+                    ticks: {
+                        color: "#a1a1aa",
+                        font: {
+                            size: 12,
+                            weight: "600"
+                        }
+                    },
 
-                ticks: {
-                    color: "#a1a1aa",
-                    precision: 0,
-                    padding: 10,
-                    font: {
-                        size: 11,
-                        weight: "500"
+                    grid: {
+                        display: false
                     }
                 },
 
-                grid: {
-                    color: "rgba(255,255,255,0.08)"
+                y: {
+                    beginAtZero: true,
+
+                    ticks: {
+                        color: "#a1a1aa",
+                        precision: 0,
+                        padding: 10,
+                        font: {
+                            size: 11,
+                            weight: "500"
+                        }
+                    },
+
+                    grid: {
+                        color: "rgba(255,255,255,0.08)"
+                    }
                 }
             }
         }
-    }
-});
+    });
+}
+
+// ==========================================
+// EXPORTAR RELATÓRIO CSV
+// ==========================================
+
+function escaparCampoCSV(valor) {
+    const texto = String(valor ?? "");
+    return `"${texto.replace(/"/g, '""')}"`;
 }
 
 function exportarRelatorioCSV() {
+    const cabecalho = [
+        "Produto",
+        "Preço unitário",
+        "Quantidade",
+        "Valor total",
+        "Situação"
+    ];
 
-    let csv = "Produto;Preço unitário;Quantidade;Valor total;Situação\n";
+    const linhas = [cabecalho];
 
-    produtos.forEach(function(produto) {
-
+    produtos.forEach(function (produto) {
         const valorTotal = produto.preco * produto.quantidade;
         const status = obterStatus(produto);
 
-        const linha = [
+        linhas.push([
             produto.nome,
             produto.preco.toFixed(2).replace(".", ","),
             produto.quantidade,
             valorTotal.toFixed(2).replace(".", ","),
             status.texto
-        ];
-
-        csv += linha.join(";") + "\n";
+        ]);
     });
+
+    const csv = linhas
+        .map(function (linha) {
+            return linha.map(escaparCampoCSV).join(";");
+        })
+        .join("\n");
 
     const arquivo = new Blob(["\uFEFF" + csv], {
         type: "text/csv;charset=utf-8;"
     });
 
-    const link = document.createElement("a");
     const url = URL.createObjectURL(arquivo);
+    const link = document.createElement("a");
 
     link.href = url;
     link.download = "relatorio-estoque.csv";
-    link.click();
 
-    URL.revokeObjectURL(url);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(function () {
+        URL.revokeObjectURL(url);
+    }, 1000);
 }
-document.getElementById("exportarCSV").addEventListener("click", exportarRelatorioCSV);
+
+if (botaoExportarCSV) {
+    botaoExportarCSV.addEventListener("click", exportarRelatorioCSV);
+}
 
 // ==========================================
 // INICIALIZAR SISTEMA
 // ==========================================
 
 carregarProdutosAPI();
-atualizarResumo();
 carregarHistoricoAPI();
-atualizarRelatorioEstoque();

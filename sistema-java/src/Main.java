@@ -17,59 +17,7 @@ public class Main {
 
         do {
 
-int semEstoque = 0;
-int estoqueBaixo = 0;
-int precisaReposicao = 0;
-double valorTotalEstoque = 0;
-int totalProdutos = 0;
-
-try {
-    ProdutoDAO daoResumo = new ProdutoDAO();
-    ArrayList<Produto> produtosResumo = daoResumo.listarProdutos();
-
-    System.out.println("TESTE DE CONEXÃO: produtos encontrados = "
-        + produtosResumo.size());
-
-    totalProdutos = produtosResumo.size();
-
-    for (int i = 0; i < produtosResumo.size(); i++) {
-        Produto p = produtosResumo.get(i);
-
-        valorTotalEstoque += p.preco * p.quantidade;
-
-        if (p.quantidade == 0) {
-            semEstoque++;
-        }
-
-        if (p.quantidade > 0 && p.quantidade <= p.estoqueMinimo){
-            estoqueBaixo++;
-        }
-
-        if (p.quantidade <= p.estoqueMinimo) {
-            precisaReposicao++;
-        }
-    }
-
-} catch (SQLException e) {
-    System.out.println("Erro ao atualizar resumo do estoque: "
-            + e.getMessage());
-}
-
-          System.out.println();
-          System.out.println("==========RESUMO DO ESTOQUE=========");
-          System.out.println("Total de produtos: " + totalProdutos);
-          System.out.println("Produtos sem estoque: " + semEstoque);
-          System.out.println("Produtos que precisam de reposicao: " + precisaReposicao);
-          System.out.println("Produtos com estoque baixo : " + estoqueBaixo);
-
-          System.out.printf(
-          Locale.forLanguageTag("pt-BR"),
-          "Valor total do estoque:  R$ %.2f%n",
-          valorTotalEstoque
-);
-
-            System.out.println("=====================================");
-
+         exibirResumoEstoque();
 
             System.out.println();
             System.out.println("=========================================");
@@ -163,6 +111,7 @@ try {
         System.out.println("Digite um numero inteiro:");
         scanner.nextLine();
     }
+    
 
     estoqueMinimo = scanner.nextInt();
 
@@ -813,8 +762,57 @@ case 9:
       scanner.close();
           
     }
+  
+  public static void exibirResumoEstoque() {
 
+    int semEstoque = 0;
+    int estoqueBaixo = 0;
+    int precisaReposicao = 0;
+    double valorTotalEstoque = 0;
+    int totalProdutos = 0;
 
+    try {
+        ProdutoDAO daoResumo = new ProdutoDAO();
+        ArrayList<Produto> produtosResumo = daoResumo.listarProdutos();
 
+        totalProdutos = produtosResumo.size();
+
+        for (Produto p : produtosResumo) {
+
+            valorTotalEstoque += p.preco * p.quantidade;
+
+            if (p.quantidade == 0) {
+                semEstoque++;
+            }
+
+            if (p.quantidade > 0 && p.quantidade <= p.estoqueMinimo) {
+                estoqueBaixo++;
+            }
+
+            if (p.quantidade <= p.estoqueMinimo) {
+                precisaReposicao++;
+            }
+        }
+
+        System.out.println();
+        System.out.println("========== RESUMO DO ESTOQUE =========");
+        System.out.println("Total de produtos: " + totalProdutos);
+        System.out.println("Produtos sem estoque: " + semEstoque);
+        System.out.println("Produtos que precisam de reposição: " + precisaReposicao);
+        System.out.println("Produtos com estoque baixo: " + estoqueBaixo);
+
+        System.out.printf(
+            Locale.forLanguageTag("pt-BR"),
+            "Valor total do estoque: R$ %.2f%n",
+            valorTotalEstoque
+        );
+
+        System.out.println("======================================");
+
+    } catch (SQLException e) {
+        System.out.println("Erro ao atualizar resumo do estoque: "
+                + e.getMessage());
+    }
+}
 }
 

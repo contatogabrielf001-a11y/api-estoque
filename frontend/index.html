@@ -5,6 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de controle e gerenciamento de estoque, produtos e movimentações.">
     <title>Stock Control | Gestão de Estoque</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -13,7 +14,6 @@
 
     <div class="layout">
 
-        <!-- MENU LATERAL -->
         <aside class="sidebar">
 
             <div class="logo">
@@ -26,21 +26,25 @@
 
             <div class="menu-label">MENU PRINCIPAL</div>
 
-            <nav class="menu">
+            <nav class="menu" aria-label="Menu principal">
                 <a href="#inicio" class="menu-item ativo">
-                    <span>▦</span> Dashboard
+                    <span aria-hidden="true">▦</span>
+                    Dashboard
                 </a>
 
                 <a href="#produtos" class="menu-item">
-                    <span>□</span> Produtos
+                    <span aria-hidden="true">□</span>
+                    Produtos
                 </a>
 
                 <a href="#historico" class="menu-item">
-                    <span>↔</span> Movimentações
+                    <span aria-hidden="true">↔</span>
+                    Movimentações
                 </a>
 
                 <a href="#relatorio" class="menu-item">
-                    <span>▤</span> Relatórios
+                    <span aria-hidden="true">▤</span>
+                    Relatórios
                 </a>
             </nav>
 
@@ -51,10 +55,8 @@
 
         </aside>
 
-        <!-- CONTEÚDO PRINCIPAL -->
         <main class="conteudo">
 
-            <!-- CABEÇALHO -->
             <header class="topbar" id="inicio">
 
                 <div>
@@ -63,7 +65,7 @@
                 </div>
 
                 <div class="usuario">
-                    <div class="avatar">A</div>
+                    <div class="avatar" aria-hidden="true">A</div>
                     <div>
                         <strong>Administrador</strong>
                         <span>Controle de estoque</span>
@@ -72,32 +74,31 @@
 
             </header>
 
-            <!-- RESUMO DO ESTOQUE -->
-            <section class="resumo">
+            <section class="resumo" aria-label="Resumo do estoque">
 
                 <div class="card card-total">
-                    <div class="card-icon">▦</div>
+                    <div class="card-icon" aria-hidden="true">▦</div>
                     <h2>Total de produtos</h2>
                     <p class="numero" id="totalProdutos">0</p>
                     <span class="card-descricao">Produtos cadastrados</span>
                 </div>
 
                 <div class="card card-baixo">
-                    <div class="card-icon">⚠</div>
+                    <div class="card-icon" aria-hidden="true">⚠</div>
                     <h2>Estoque baixo</h2>
                     <p class="numero" id="estoqueBaixo">0</p>
                     <span class="card-descricao">Precisam de reposição</span>
                 </div>
 
                 <div class="card card-esgotado">
-                    <div class="card-icon">!</div>
+                    <div class="card-icon" aria-hidden="true">!</div>
                     <h2>Sem estoque</h2>
                     <p class="numero" id="semEstoque">0</p>
                     <span class="card-descricao">Produtos indisponíveis</span>
                 </div>
 
                 <div class="card card-valor">
-                    <div class="card-icon">R$</div>
+                    <div class="card-icon" aria-hidden="true">R$</div>
                     <h2>Valor em estoque</h2>
                     <p class="numero" id="valorEstoque">R$ 0,00</p>
                     <span class="card-descricao">Valor total armazenado</span>
@@ -105,11 +106,9 @@
 
             </section>
 
-            <!-- PRODUTOS -->
             <section class="produtos" id="produtos">
 
                 <div class="cabecalho-produtos">
-
                     <div>
                         <h2>Produtos cadastrados</h2>
                         <p>Consulte e gerencie os produtos do seu estoque.</p>
@@ -118,10 +117,8 @@
                     <button type="button" class="botao-adicionar" id="abrirFormulario">
                         + Novo produto
                     </button>
-
                 </div>
 
-                <!-- PESQUISA E FILTRO -->
                 <div class="pesquisa">
 
                     <input
@@ -129,9 +126,10 @@
                         id="pesquisarProduto"
                         placeholder="Pesquisar produto pelo nome..."
                         autocomplete="off"
+                        aria-label="Pesquisar produto pelo nome"
                     >
 
-                    <select id="filtroStatus">
+                    <select id="filtroStatus" aria-label="Filtrar produtos por status">
                         <option value="todos">Todos os produtos</option>
                         <option value="disponivel">Disponíveis</option>
                         <option value="baixo">Estoque baixo</option>
@@ -140,36 +138,37 @@
 
                 </div>
 
-                <!-- TABELA DE PRODUTOS -->
                 <div class="tabela-container">
 
-                    <table class="tabela-produtos">
-             <colgroup>
-                <col style="width: 18%">
-                <col style="width: 12%">
-                <col style="width: 13%">
-                <col style="width: 15%">
-                <col style="width: 42%">
-             </colgroup>
+                    <table class="tabela-produtos" aria-label="Produtos cadastrados">
 
-            <thead>
-                <tr>
-                <th>Produto</th>
-                <th>Preço</th>
-                <th>Quantidade</th>
-                <th>Status</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
+                        <colgroup>
+                            <col style="width: 18%">
+                            <col style="width: 12%">
+                            <col style="width: 13%">
+                            <col style="width: 15%">
+                            <col style="width: 42%">
+                        </colgroup>
 
-    <tbody>
-    </tbody>
-</table>
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>Preço</th>
+                                <th>Quantidade</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                        </tbody>
+
+                    </table>
+
                 </div>
 
             </section>
 
-            <!-- CADASTRO DE PRODUTO -->
             <section class="formulario" id="formularioProduto" hidden>
 
                 <div class="formulario-cabecalho">
@@ -195,6 +194,7 @@
                     type="text"
                     id="nomeProduto"
                     placeholder="Ex.: Teclado gamer"
+                    maxlength="100"
                 >
 
                 <label for="precoProduto">Preço (R$)</label>
@@ -225,16 +225,21 @@
 
             </section>
 
-            <!-- EDIÇÃO DE PRODUTO -->
             <section class="formulario" id="formularioEdicao" hidden>
 
-                <h2>Editar produto</h2>
+                <div class="formulario-cabecalho">
+                    <div>
+                        <h2>Editar produto</h2>
+                        <p>Atualize as informações do produto selecionado.</p>
+                    </div>
+                </div>
 
                 <label for="editarNomeProduto">Nome do produto</label>
                 <input
                     type="text"
                     id="editarNomeProduto"
                     placeholder="Nome do produto"
+                    maxlength="100"
                 >
 
                 <label for="editarPrecoProduto">Preço (R$)</label>
@@ -275,16 +280,13 @@
 
             </section>
 
-            <!-- HISTÓRICO DE MOVIMENTAÇÕES -->
             <section class="secao-historico" id="historico">
 
                 <div class="secao-cabecalho">
-
                     <div>
                         <h2>Histórico de movimentações</h2>
                         <p>Acompanhe todas as entradas e saídas do estoque.</p>
                     </div>
-
                 </div>
 
                 <div class="filtros-historico">
@@ -321,7 +323,7 @@
 
                 <div class="tabela-container">
 
-                    <table>
+                    <table aria-label="Histórico de movimentações">
 
                         <thead>
                             <tr>
@@ -341,21 +343,24 @@
 
             </section>
 
-            <!-- RELATÓRIO -->
             <section class="secao-relatorio" id="relatorio">
 
-               <div class="cabecalho-relatorio">
+                <div class="cabecalho-relatorio">
 
-                <div>
-                    <h2>Relatório de estoque</h2>
-                    <p>Visualize os valores e a situação dos seus produtos.</p>
-            </div>
+                    <div>
+                        <h2>Relatório de estoque</h2>
+                        <p>Visualize os valores e a situação dos seus produtos.</p>
+                    </div>
 
-        <button type="button" class="botao-exportar" id="exportarCSV">
-        ↓ Exportar CSV
-    </button>
+                    <button
+                        type="button"
+                        class="botao-exportar"
+                        id="exportarCSV"
+                    >
+                        ↓ Exportar CSV
+                    </button>
 
-</div>
+                </div>
 
                 <div class="resumo-relatorio">
                     <h3>Valor total do estoque</h3>
@@ -364,7 +369,7 @@
 
                 <div class="tabela-container">
 
-                    <table>
+                    <table aria-label="Relatório de estoque">
 
                         <thead>
                             <tr>
@@ -385,16 +390,13 @@
 
             </section>
 
-            <!-- DASHBOARD DE MOVIMENTAÇÕES -->
             <section class="secao-dashboard">
 
                 <div class="secao-cabecalho">
-
                     <div>
                         <h2>Dashboard de movimentações</h2>
                         <p>Acompanhe o fluxo de movimentações do estoque.</p>
                     </div>
-
                 </div>
 
                 <div class="cards-dashboard">
@@ -412,15 +414,12 @@
                 </div>
 
                 <div class="grafico-container">
-
                     <h3>Movimentações de estoque</h3>
                     <canvas id="graficoMovimentacoes"></canvas>
-
                 </div>
 
             </section>
 
-            <!-- RODAPÉ -->
             <footer class="rodape">
                 STOCK CONTROL · Sistema de gerenciamento de estoque
             </footer>
@@ -429,10 +428,7 @@
 
     </div>
 
-    <!-- BIBLIOTECA DO GRÁFICO -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- JAVASCRIPT DO SISTEMA -->
     <script src="script.js"></script>
 
 </body>
